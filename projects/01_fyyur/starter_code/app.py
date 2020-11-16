@@ -8,6 +8,7 @@ import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
@@ -19,7 +20,10 @@ from forms import *
 app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+migrate = Migrate(app, db)
 
 # TODO: connect to a local postgresql database
 
@@ -42,10 +46,10 @@ class Venue(db.Model):
     seeking_description = db.Column(db.String)
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    genres = db.Column(db.ARRAY(db.String))
     # TODO: FIGURE OUT HOW TO DECLARE ARRAYS OF OBJS and STRINGS
     # past_shows = db.Column(db.)
     # upcoming_shows =
-    #genres = db.Column(db.String(120))
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -55,39 +59,43 @@ class Artist(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
     website = db.Column(db.String(120))
     facebook_link = db.Column(db.String(120))
-    seeking_venue = db.Column(db.Boolean),
+    seeking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String)
     image_link = db.Column(db.String(500))
+    genres = db.Column(db.ARRAY(db.String))
     # TODO: FIGURE OUT HOW TO DECLARE ARRAYS OF OBJS and STRINGS
     # past_shows = db.Column(db.)
     # upcoming_shows =
-    #genres = db.Column(db.String(120))
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
+
+
+class Show(db.Model):
+    __tablename__ = 'shows'
+    id = db.Column(db.Integer, primary_key=True)
+    start_time = db.Column(db.DateTime())
+    # Foreign Keys
+    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'))
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'))
+    # relationships
+    artist = db.relationship(
+        Artist,
+        backref=db.backref('shows', cascade='all, delete')
+    )
+    venue = db.relationship(
+        Venue,
+        backref=db.backref('shows', cascade='all, delete')
+    )
+
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
 
-shows = db.Table('shows',
-                 db.Column('venue_id', db.Integer, db.ForeignKey(
-                           'order.id'), primary_key=True),
-                 db.Column('venue_name', db.Integer, db.ForeignKey(
-                           'product.id'), primary_key=True),
-                 db.Column('artist_id', db.Integer, db.ForeignKey(
-                     'product.id'), primary_key=True),
-                 db.Column('artist_name', db.Integer, db.ForeignKey(
-                     'product.id'), primary_key=True),
-                 db.Column('artist_image_link', db.Integer, db.ForeignKey(
-                     'product.id'), primary_key=True),
-                 db.Column('start_time', db.Integer, db.ForeignKey(
-                     'product.id'), primary_key=True)
-                 )
 #----------------------------------------------------------------------------#
 # Filters.
 #----------------------------------------------------------------------------#
@@ -121,6 +129,7 @@ def index():
 def venues():
     # TODO: replace with real venues data.
     #       num_shows should be aggregated based on number of upcoming shows per venue.
+
     data = [{
         "city": "San Francisco",
         "state": "CA",
@@ -284,17 +293,8 @@ def delete_venue(venue_id):
 
 @app.route('/artists')
 def artists():
+    data = Artist.query.all()
     # TODO: replace with real data returned from querying the database
-    data = [{
-        "id": 4,
-        "name": "Guns N Petals",
-    }, {
-        "id": 5,
-        "name": "Matt Quevedo",
-    }, {
-        "id": 6,
-        "name": "The Wild Sax Band",
-    }]
     return render_template('pages/artists.html', artists=data)
 
 
@@ -483,6 +483,18 @@ def shows():
     # displays list of shows at /shows
     # TODO: replace with real venues data.
     #       num_shows should be aggregated based on number of upcoming shows per venue.
+
+    data1 = Show.query.all()
+    artists = Artist.query.options(load_only("name")).all()
+    # artists = Artist.query.get(name, image_link).filter_by(
+    #     Show.artist_id == Artist.id)
+    # venues = Venue.query.get(name, image_link).filter_by(
+    #     Show.venue_id == Venue.id)
+
+    print('DATA: ', data1)
+    print('ARTIST: ', artists)
+    print('VENUE: ', venues)
+
     data = [{
         "venue_id": 1,
         "venue_name": "The Musical Hop",
@@ -522,14 +534,14 @@ def shows():
     return render_template('pages/shows.html', shows=data)
 
 
-@app.route('/shows/create')
+@ app.route('/shows/create')
 def create_shows():
     # renders form. do not touch.
     form = ShowForm()
     return render_template('forms/new_show.html', form=form)
 
 
-@app.route('/shows/create', methods=['POST'])
+@ app.route('/shows/create', methods=['POST'])
 def create_show_submission():
     # called to create new shows in the db, upon submitting new show listing form
     # TODO: insert form data as a new Show record in the db, instead
@@ -542,12 +554,12 @@ def create_show_submission():
     return render_template('pages/home.html')
 
 
-@app.errorhandler(404)
+@ app.errorhandler(404)
 def not_found_error(error):
     return render_template('errors/404.html'), 404
 
 
-@app.errorhandler(500)
+@ app.errorhandler(500)
 def server_error(error):
     return render_template('errors/500.html'), 500
 
