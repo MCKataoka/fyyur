@@ -2,7 +2,7 @@
 {% block title %}Edit Artist{% endblock %}
 {% block content %}
   <div class="form-wrapper">
-    <form class="form" method="post" action="/artists/{{artist.id}}/edit">
+    <form id="form" class="form" method="post" action="/artists/{{artist.id}}/edit">
       <h3 class="form-heading">Edit artist <em>{{ artist.name }}</em></h3>
       <div class="form-group">
         <label for="name">Name</label>
@@ -35,4 +35,33 @@
       <input type="submit" value="Edit Artist" class="btn btn-primary btn-lg btn-block">
     </form>
   </div>
+  <script>
+    document.getElementById('form').onsubmit = function (e) {
+      e.preventDefault();
+      const url = window.location.pathname
+      const selected = [];
+      for (var option of document.getElementById('genres').options) {
+        if (option.selected) {
+          selected.push(option.value);
+        }
+      }
+      fetch('/artists/{{artist.id}}/edit', {
+        method: 'POST',
+        body: JSON.stringify({
+            'name': document.getElementById('name').value,
+            'city': document.getElementById('city').value,
+            'state': document.getElementById('state').value,
+            'phone': document.getElementById('phone').value,
+            'genres': selected,
+            'facebook_link': document.getElementById('facebook_link').value
+        }),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(function (response) {
+        window.location = '/artists';
+    })
+    }
+  </script>
 {% endblock %}

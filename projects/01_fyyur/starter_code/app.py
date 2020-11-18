@@ -143,7 +143,7 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-    # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
+    # TODO_STILL: implement search on artists with partial string search. Ensure it is case-insensitive.
     # seach for Hop should return "The Musical Hop".
     # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
     response = {
@@ -205,7 +205,29 @@ def create_venue_form():
 def create_venue_submission():
     # TODO: insert form data as a new Venue record in the db, instead
     # TODO: modify data to be the data object returned from db insertion
+    error = False
+    try:
 
+        name = request.get_json()['name']
+        address = request.get_json()['address']
+        city = request.get_json()['city']
+        state = request.get_json()['state']
+        phone = request.get_json()['phone']
+        genres = request.get_json()['genres']
+        facebook_link = request.get_json()['facebook_link']
+        venue = Venue(name=name, city=city, state=state, address=address,
+                      phone=phone, genres=genres, facebook_link=facebook_link)
+        db.session.add(venue)
+        db.session.commit()
+    except():
+        db.session.rollback()
+        error = True
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        abort(500)
+        print(error)
     # on successful db insert, flash success
     flash('Venue ' + request.form['name'] + ' was successfully listed!')
     # TODO: on unsuccessful db insert, flash an error instead.
@@ -216,7 +238,7 @@ def create_venue_submission():
 
 @ app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
-    # TODO: Complete this endpoint for taking a venue_id, and using
+    # TODO_STILL: Complete this endpoint for taking a venue_id, and using
     # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
 
     # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
@@ -236,7 +258,7 @@ def artists():
 
 @ app.route('/artists/search', methods=['POST'])
 def search_artists():
-    # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
+    # TODO_STILL: implement search on artists with partial string search. Ensure it is case-insensitive.
     # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
     # search for "band" should return "The Wild Sax Band".
     response = {
@@ -272,10 +294,10 @@ def show_artist(artist_id):
 
     for i, venue in enumerate(pa_sh):
         name = db.session.query(
-            Venue.name).filter(Venue.id == pa_sh[i].artist_id).first()
+            Venue.name).filter(Venue.id == pa_sh[i].venue_id).first()
         venue.venue_name = name[0]
         image_link = db.session.query(
-            Venue.image_link).filter(Venue.id == pa_sh[i].artist_id).first()
+            Venue.image_link).filter(Venue.id == pa_sh[i].venue_id).first()
         venue.venue_image_link = image_link[0]
 
     data.past_shows = pa_sh
@@ -302,6 +324,27 @@ def edit_artist(artist_id):
 def edit_artist_submission(artist_id):
     # TODO: take values from the form submitted, and update existing
     # artist record with ID <artist_id> using the new attributes
+    error = False
+    try:
+        artist = Artist.query.get(artist_id)
+
+        artist.name = request.get_json()['name']
+        artist.city = request.get_json()['city']
+        artist.state = request.get_json()['state']
+        artist.phone = request.get_json()['phone']
+        artist.genres = request.get_json()['genres']
+        artist.facebook_link = request.get_json()['facebook_link']
+
+        db.session.commit()
+    except():
+        db.session.rollback()
+        error = True
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        abort(500)
+        print(error)
 
     return redirect(url_for('show_artist', artist_id=artist_id))
 
@@ -318,6 +361,26 @@ def edit_venue(venue_id):
 def edit_venue_submission(venue_id):
     # TODO: take values from the form submitted, and update existing
     # venue record with ID <venue_id> using the new attributes
+    error = False
+    try:
+        venue = Venue.query.get(venue_id)
+        venue.name = request.get_json()['name']
+        venue.city = request.get_json()['city']
+        venue.state = request.get_json()['state']
+        venue.phone = request.get_json()['phone']
+        venue.genres = request.get_json()['genres']
+        venue.facebook_link = request.get_json()['facebook_link']
+
+        db.session.commit()
+    except():
+        db.session.rollback()
+        error = True
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        abort(500)
+        print(error)
     return redirect(url_for('show_venue', venue_id=venue_id))
 
 #  Create Artist
@@ -396,7 +459,25 @@ def create_shows():
 def create_show_submission():
     # called to create new shows in the db, upon submitting new show listing form
     # TODO: insert form data as a new Show record in the db, instead
+    error = False
+    try:
 
+        artist_id = request.get_json()['artist_id']
+        venue_id = request.get_json()['venue_id']
+        start_time = request.get_json()['start_time']
+        show = Show(artist_id=artist_id, venue_id=venue_id,
+                    start_time=start_time)
+        db.session.add(show)
+        db.session.commit()
+    except():
+        db.session.rollback()
+        error = True
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        abort(500)
+        print(error)
     # on successful db insert, flash success
     flash('Show was successfully listed!')
     # TODO: on unsuccessful db insert, flash an error instead.
