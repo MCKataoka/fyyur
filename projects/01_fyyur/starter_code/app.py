@@ -152,7 +152,7 @@ def search_venues():
         search_term = request.form['search_term']
         search = "%{}%".format(search_term)
 
-        posts = Venue.query.filter(Venue.name.like(search)).all()
+        posts = Venue.query.filter(Venue.name.ilike(search)).all()
         current_time = datetime.utcnow()
 
         response = {
@@ -221,7 +221,7 @@ def show_venue(venue_id):
 
 @ app.route('/venues/create', methods=['GET'])
 def create_venue_form():
-    form = VenueForm()
+    form = NewVenue()
     return render_template('forms/new_venue.html', form=form)
 
 
@@ -239,8 +239,10 @@ def create_venue_submission():
         phone = request.get_json()['phone']
         genres = request.get_json()['genres']
         facebook_link = request.get_json()['facebook_link']
+        website = request.get_json()['website']
+        image_link = request.get_json()['image_link']
         venue = Venue(name=name, city=city, state=state, address=address,
-                      phone=phone, genres=genres, facebook_link=facebook_link)
+                      phone=phone, genres=genres, facebook_link=facebook_link, website=website, image_link=image_link)
         db.session.add(venue)
         db.session.commit()
     except():
@@ -291,7 +293,7 @@ def search_artists():
         search_term = request.form['search_term']
         search = "%{}%".format(search_term)
 
-        posts = Artist.query.filter(Artist.name.like(search)).all()
+        posts = Artist.query.filter(Artist.name.ilike(search)).all()
         current_time = datetime.utcnow()
 
         response = {
@@ -437,7 +439,7 @@ def edit_venue_submission(venue_id):
 
 @ app.route('/artists/create', methods=['GET'])
 def create_artist_form():
-    form = ArtistForm()
+    form = NewArtist()
     return render_template('forms/new_artist.html', form=form)
 
 
@@ -454,9 +456,11 @@ def create_artist_submission():
         state = request.get_json()['state']
         phone = request.get_json()['phone']
         genres = request.get_json()['genres']
-        facebook_link = request.get_json()['facebook_link']
+        facebook_link = request.get_json()['facebook_link'],
+        website = request.get_json()['website']
+        image_link = request.get_json()['image_link']
         artist = Artist(name=name, city=city, state=state,
-                        phone=phone, genres=genres, facebook_link=facebook_link)
+                        phone=phone, genres=genres, facebook_link=facebook_link, image_link=image_link, website=website)
         db.session.add(artist)
         db.session.commit()
     except():
